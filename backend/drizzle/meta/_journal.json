@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791662086051,
+      "tag": "0000_clear_longshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791666247636,
+      "tag": "0001_outgoing_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791666415614,
+      "tag": "0002_overrated_hellion",
+      "breakpoints": true
+    }
+  ]
+}

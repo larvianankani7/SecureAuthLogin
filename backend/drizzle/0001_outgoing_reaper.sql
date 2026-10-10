@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "password_fingerprint" varchar(64) NOT NULL;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_password_fingerprint_unique" UNIQUE("password_fingerprint");
