@@ -44,11 +44,12 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const accessCookie = "access_token";
 const refreshCookie = "refresh_token";
 
+
 function cookieOptions(secure: boolean) {
   return {
     httpOnly: true,
     secure,
-    sameSite: "lax" as const
+    sameSite: secure ? ("none" as const) : ("lax" as const)
   };
 }
 
@@ -506,7 +507,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
             id: user.id,
             email: user.email,
             username: user.username,
-            role: user.role
+            role: user.role,
+            createdAt: user.createdAt
         }
         });
     });
@@ -585,7 +587,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         id: user.id,
         email: user.email,
         username: user.username,
-        role: user.role
+        role: user.role,
+        createdAt: user.createdAt
       }
     });
   });

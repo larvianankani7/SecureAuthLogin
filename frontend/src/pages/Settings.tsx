@@ -63,13 +63,8 @@ export default function Settings() {
           const data = await res.json();
           setUsers(data.users || []);
         } catch (err) {
-          console.error(err);
-          // Fallback for UI demonstration if backend is down
-          setUsers([
-            { id: 'usr_8f72k9al', email: 'john.doe@example.com', username: 'john.doe', role: 'user', createdAt: '2026-10-01' },
-            { id: 'usr_2x9m4p1q', email: 'jane.smith@example.com', username: 'jane.smith', role: 'user', createdAt: '2026-10-05' },
-            { id: 'usr_5v3n8c2w', email: 'suspicious.actor@tempmail.com', username: 'suspicious.actor', role: 'user', createdAt: '2026-10-09' },
-          ]);
+          console.error("Failed to fetch admin users:", err);
+          setUsers([]);
         } finally {
           setIsLoadingUsers(false);
         }
