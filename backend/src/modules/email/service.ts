@@ -1,26 +1,18 @@
 import nodemailer from "nodemailer";
 import { eq } from "drizzle-orm";
-
+import { Resend } from "resend";
 import { env } from "../../config/env.js";
 import { db } from "../../db/client.js";
 import { emailOutbox } from "../../db/schema.js";
 
-const transporter = nodemailer.createTransport({
-  host: env.SMTP_HOST,
-  port: env.SMTP_PORT,
-  secure: env.SMTP_SECURE,
-  auth: {
-    user: env.SMTP_USER,
-    pass: env.SMTP_PASS
-  }
-});
+const resend = new Resend(env.RESEND_API_KEY);
 
 export async function sendOtpEmail(
   email: string,
   code: string
 ): Promise<void> {
-  await transporter.sendMail({
-    from: env.SMTP_FROM,
+  await resend.emails.send({
+    from: env.RESEND_FROM,
     to: email,
     subject: "Your SecureAuthLogin verification code",
     text: [
@@ -74,8 +66,8 @@ export async function processEmailOutbox(): Promise<void> {
     // Retry transient failures immediately, with a short delay.
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        await transporter.sendMail({
-          from: env.SMTP_FROM,
+        await resend.emails.send({
+          from: env.RESEND_FROM,
           to: email.toEmail,
           subject: email.subject,
           text: email.body

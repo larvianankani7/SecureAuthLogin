@@ -25,7 +25,8 @@
     "fastify-plugin": "^6.0.1",
     "nodemailer": "^10.1.0",
     "postgres": "^3.4.9",
-    "redis": "^6.3.0"
+    "redis": "^6.3.0",
+    "resend": "^6.32.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
