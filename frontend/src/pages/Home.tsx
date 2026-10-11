@@ -205,11 +205,7 @@ export default function Home() {
             <h3 className="text-xl font-semibold text-gray-200 mb-2">Email OTP Verification</h3>
             <p className="text-gray-400 text-sm leading-relaxed">Multi-factor capability ensures account recovery and identity confirmation are tied to a verifiable external channel before granting access.</p>
           </div>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-6 rounded-2xl hover:bg-[var(--color-surface-hover)] transition-colors">
-            <LayoutTemplate className="w-8 h-8 text-blue-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-200 mb-2">Playwright Testing</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">Critical authentication paths are heavily tested with automated end-to-end tests to guarantee structural integrity across releases.</p>
-          </div>
+          
         </div>
       </motion.div>
       {/* Technology Stack Section */}
