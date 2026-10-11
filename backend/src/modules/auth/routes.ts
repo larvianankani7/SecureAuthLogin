@@ -10,13 +10,10 @@ import { supabase } from "../../lib/supabase.js";
 import {
   durationToMs,
   emailRateLimitKey,
-  generateOtp,
   generatePasswordFingerprint,
   generateRefreshToken,
-  hashOtp,
   hashRefreshToken,
-  normalizeEmail,
-  safeHashCompare
+  normalizeEmail
 } from "../../lib/crypto.js";
 import { checkRateLimit } from "../../lib/rate-limit.js";
 import {sendOtpEmail, getAccountLockedEmailContent, processEmailOutbox} from "../email/service.js";
@@ -298,66 +295,57 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         });
       }
 
-      const email = normalizeEmail(request.body?.email ?? "");
-      const code = request.body?.code ?? "";
-
       
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: code,
-        type: "email"
+    const email = normalizeEmail(request.body?.email ?? "");
+    const code = (request.body?.code ?? "").trim();
+
+    if (!emailPattern.test(email) || !/^\d{8}$/.test(code)) {
+      return reply.code(400).send({
+        message: "Enter a valid email and 8-digit verification code."
       });
+    }
 
-      if (error || !data.user) {
-        return reply.code(400).send({
-          message: "Invalid or expired verification code."
-        });
+    const attemptsKey = `otp:attempts:${email}`;
+    const pendingKey = `signup:pending:${email}`;
+
+    const attempts = Number((await redis.get(attemptsKey)) ?? "0");
+
+    if (attempts >= env.OTP_MAX_ATTEMPTS) {
+      return reply.code(429).send({
+        message: "Too many incorrect codes. Request a new code."
+      });
+    }
+
+    // Check the pending signup before consuming the OTP.
+    const pendingJson = await redis.get(pendingKey);
+
+    if (!pendingJson) {
+      await clearPendingSignup(email);
+
+      return reply.code(400).send({
+        message: "Your pending signup has expired. Please sign up again."
+      });
+    }
+
+    // Supabase is the single authority for OTP verification.
+    // Do not check a second OTP hash in Redis.
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: "email"
+    });
+
+    if (error || !data.user) {
+      const count = await redis.incr(attemptsKey);
+
+      if (count === 1) {
+        await redis.expire(attemptsKey, env.OTP_TTL_SECONDS);
       }
 
-      const attemptsKey = `otp:attempts:${email}`;
-      const otpKey = `otp:signup:${email}`;
-      const pendingKey = `signup:pending:${email}`;
-
-      const attempts = Number((await redis.get(attemptsKey)) ?? "0");
-
-      if (attempts >= env.OTP_MAX_ATTEMPTS) {
-        return reply.code(429).send({
-          message: "Too many incorrect codes. Request a new code."
-        });
-      }
-
-      const storedHash = await redis.get(otpKey);
-
-      if (!storedHash) {
-        return reply.code(400).send({
-          message: "The code is invalid or expired."
-        });
-      }
-
-      const suppliedHash = hashOtp(email, code);
-
-      if (!safeHashCompare(storedHash, suppliedHash)) {
-        const count = await redis.incr(attemptsKey);
-
-        if (count === 1) {
-          await redis.expire(attemptsKey, env.OTP_TTL_SECONDS);
-        }
-
-        return reply.code(400).send({
-          message: "The code is invalid or expired."
-        });
-      }
-
-      const pendingJson = await redis.get(pendingKey);
-
-      if (!pendingJson) {
-        await clearPendingSignup(email);
-
-        return reply.code(400).send({
-          message:
-            "Your pending signup has expired. Please sign up again."
-        });
-      }
+      return reply.code(400).send({
+        message: "The code is invalid or expired."
+      });
+    }
 
       let pendingSignup: PendingSignup;
 
