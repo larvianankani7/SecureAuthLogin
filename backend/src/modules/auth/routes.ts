@@ -1,24 +1,12 @@
-
 import type { FastifyInstance, FastifyReply } from "fastify";
-
 import argon2 from "argon2";
-
 import { and, eq, isNull } from "drizzle-orm";
-
 import { randomUUID } from "node:crypto";
-
 import { db } from "../../db/client.js";
 import { redis } from "../../db/redis.js";
-
-import {
-  blockedEmails,
-  emailOutbox,
-  sessions,
-  users
-} from "../../db/schema.js";
-
+import {blockedEmails, emailOutbox, sessions, users} from "../../db/schema.js";
 import { env } from "../../config/env.js";
-
+import { supabase } from "../../lib/supabase.js";
 import {
   durationToMs,
   emailRateLimitKey,
@@ -30,14 +18,8 @@ import {
   normalizeEmail,
   safeHashCompare
 } from "../../lib/crypto.js";
-
 import { checkRateLimit } from "../../lib/rate-limit.js";
-
-import {
-  sendOtpEmail,
-  getAccountLockedEmailContent,
-  processEmailOutbox
-} from "../email/service.js";
+import {sendOtpEmail, getAccountLockedEmailContent, processEmailOutbox} from "../email/service.js";
 
 type SignupBody = {
   email?: string;
@@ -133,21 +115,13 @@ async function issueSession(
 }
 
 async function storeAndSendOtp(email: string): Promise<void> {
-  const code = generateOtp();
-
-  await redis.set(
-    `otp:signup:${email}`,
-    hashOtp(email, code),
-    { EX: env.OTP_TTL_SECONDS }
-  );
-
   await redis.set(
     `otp:attempts:${email}`,
     "0",
     { EX: env.OTP_TTL_SECONDS }
   );
 
-  await sendOtpEmail(email, code);
+  await sendOtpEmail(email);
 }
 
 async function clearPendingSignup(email: string): Promise<void> {
@@ -327,9 +301,16 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       const email = normalizeEmail(request.body?.email ?? "");
       const code = request.body?.code ?? "";
 
-      if (!emailPattern.test(email) || !/^\d{6}$/.test(code)) {
+      
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: "email"
+      });
+
+      if (error || !data.user) {
         return reply.code(400).send({
-          message: "Invalid verification request."
+          message: "Invalid or expired verification code."
         });
       }
 

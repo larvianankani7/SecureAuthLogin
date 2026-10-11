@@ -38,6 +38,8 @@ export const env = {
   COOKIE_SECURE: booleanValue("COOKIE_SECURE", false),
   OTP_TTL_SECONDS: positiveInteger("OTP_TTL_SECONDS", 120),
   OTP_MAX_ATTEMPTS: positiveInteger("OTP_MAX_ATTEMPTS", 5),
+  SUPABASE_URL: required("SUPABASE_URL"),
+  SUPABASE_PUBLISHABLE_KEY: required("SUPABASE_PUBLISHABLE_KEY"),
   RESEND_API_KEY: required("RESEND_API_KEY"),
   RESEND_FROM: required("RESEND_FROM"),
   ADMIN_EMAIL: required("ADMIN_EMAIL").toLowerCase(),

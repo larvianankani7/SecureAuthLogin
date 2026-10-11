@@ -1,27 +1,23 @@
-import nodemailer from "nodemailer";
 import { eq } from "drizzle-orm";
 import { Resend } from "resend";
+import { supabase } from "../../lib/supabase.js";
 import { env } from "../../config/env.js";
 import { db } from "../../db/client.js";
 import { emailOutbox } from "../../db/schema.js";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
-export async function sendOtpEmail(
-  email: string,
-  code: string
-): Promise<void> {
-  await resend.emails.send({
-    from: env.RESEND_FROM,
-    to: email,
-    subject: "Your SecureAuthLogin verification code",
-    text: [
-      "Your email verification code is:",
-      code,
-      `This code expires in ${env.OTP_TTL_SECONDS} seconds.`,
-      "Do not share this code with anyone."
-    ].join("\n")
+export async function sendOtpEmail(email: string): Promise<void> {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true
+    }
   });
+
+  if (error) {
+    throw new Error(`OTP email request failed: ${error.message}`);
+  }
 }
 
 export function getAccountDeletedEmailContent() {
@@ -63,15 +59,18 @@ export async function processEmailOutbox(): Promise<void> {
   for (const email of pending) {
     let sent = false;
 
-    // Retry transient failures immediately, with a short delay.
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        await resend.emails.send({
+        const { error } = await resend.emails.send({
           from: env.RESEND_FROM,
           to: email.toEmail,
           subject: email.subject,
           text: email.body
         });
+
+        if (error) {
+          throw new Error(`Resend email failed: ${error.message}`);
+        }
 
         await db
           .update(emailOutbox)
@@ -107,7 +106,6 @@ export async function processEmailOutbox(): Promise<void> {
     }
 
     if (!sent) {
-      // The failed/pending status is retained for future recovery.
       continue;
     }
   }
