@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { API_BASE_URL } from '../lib/api';
 
-// Define the expected user profile contract from the backend
 export type User = {
   id: string;
   email: string;
@@ -28,13 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       try {
         // First try to fetch the profile
-        let res = await fetch('/api/users/me', { credentials: 'include' });
+        let res = await fetch(`${API_BASE_URL}/api/users/me`, { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
         } else if (res.status === 401) {
           // If access token is expired, try to refresh
-          const refreshRes = await fetch('/api/auth/refresh', { 
+          const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh`, { 
             method: 'POST', 
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' }
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { 
+      await fetch(`${API_BASE_URL}/api/auth/logout`, { 
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }

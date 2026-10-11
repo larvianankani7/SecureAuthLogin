@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { User, Mail, Hash, Shield, Calendar, LogOut, Loader2, Save, AlertCircle, CheckCircle, Trash2, AlertTriangle, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-
+import { API_BASE_URL } from '../lib/api';
 type FetchedUser = {
   id: string;
   email: string;
@@ -40,7 +40,7 @@ export default function Settings() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch("/api/users/me", { credentials: "include" });
+        const response = await fetch(`${API_BASE_URL}/api/users/me`, { credentials: "include" });
         if (response.ok) {
           const data = await response.json();
           setProfileData(data.user);
@@ -58,7 +58,7 @@ export default function Settings() {
       const fetchUsers = async () => {
         setIsLoadingUsers(true);
         try {
-          const res = await fetch('/api/admin/users', { credentials: "include" });
+          const res = await fetch(`${API_BASE_URL}/api/admin/users`, { credentials: "include" });
           if (!res.ok) throw new Error('Failed to fetch');
           const data = await res.json();
           setUsers(data.users || []);
@@ -93,7 +93,7 @@ export default function Settings() {
 
     setStatus('saving');
     try {
-      const response = await fetch("/api/users/me", {
+      const response = await fetch(`${API_BASE_URL}/api/users/me`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json"
@@ -131,7 +131,7 @@ export default function Settings() {
     setIsDeleting(true);
     setErrorMsg('');
     try {
-      const res = await fetch(`/api/admin/users/${userToDelete}`, { method: 'DELETE', credentials: 'include' });
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${userToDelete}`, { method: 'DELETE', credentials: 'include' });
       const data = await res.json().catch(() => ({}));
       
       if (!res.ok) {

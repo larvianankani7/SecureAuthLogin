@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, AlertCircle, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import type { User } from '../context/AuthContext';
-
+import { API_BASE_URL } from '../lib/api';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +32,7 @@ export default function Login() {
       // Request: { email, password }
       // Response: { user: { id, email, username, role, createdAt } }
       // Session: HttpOnly cookie set by backend
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

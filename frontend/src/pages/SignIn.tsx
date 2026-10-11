@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, ShieldAlert, CheckCircle, ArrowLeft, Loader2, User, AlertCircle, RefreshCw } from 'lucide-react';
-
+import { API_BASE_URL } from '../lib/api';
 export default function SignIn() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +21,7 @@ export default function SignIn() {
     setIsLoading(true);
     
     try {
-      const res = await fetch('/api/auth/signup', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, username })
@@ -48,7 +48,7 @@ export default function SignIn() {
     setIsLoading(true);
     
     try {
-      const res = await fetch('/api/auth/verify-otp', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code })
@@ -76,7 +76,7 @@ export default function SignIn() {
     setIsLoading(true);
     
     try {
-      const res = await fetch('/api/auth/resend-otp', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/resend-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

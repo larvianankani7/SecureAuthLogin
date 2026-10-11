@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from 'framer-motion';
 import { Shield, Key, Lock, Code, Database, Crosshair, Search, Clock, Route, User, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
+import { API_BASE_URL } from '../lib/api';
 const CONCEPTS = [
   {
     title: "OAuth",
@@ -78,7 +78,7 @@ export default function Dashboard() {
 
     async function loadProfile() {
       try {
-        const response = await fetch("/api/users/me", {
+        const response = await fetch(`${API_BASE_URL}/api/users/me`, {
           credentials: "include"
         });
 
