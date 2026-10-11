@@ -36,8 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // If access token is expired, try to refresh
           const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh`, { 
             method: 'POST', 
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' }
+            credentials: 'include'
           });
           if (refreshRes.ok) {
             const refreshData = await refreshRes.json();
