@@ -205,7 +205,7 @@ export default function SignIn() {
                     <ShieldAlert className="w-10 h-10 text-indigo-400" />
                   </div>
                   <h2 className="text-3xl font-bold text-white mb-2">Verify Email</h2>
-                  <p className="text-gray-400">We've sent a 6-digit one-time password to <span className="font-medium text-white">{email}</span>.</p>
+                  <p className="text-gray-400">We've sent a 8-digit one-time password to <span className="font-medium text-white">{email}</span>.</p>
                 </div>
                 
                 {errorMessage && (
@@ -219,20 +219,21 @@ export default function SignIn() {
                   </motion.div>
                 )}
 
-                <form onSubmit={handleOTPSubmit} className="space-y-6">
+                <form onSubmit={handleOTPSubmit} className="space-y-8">
                   <div>
                     <input 
                       type="text" 
                       value={code}
+                      pattern="[0-9]{8}"
                       onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                       required 
-                      maxLength={6}
+                      maxLength={8}
                       className="w-full bg-black/40 border border-[var(--color-border)] rounded-xl py-4 text-center text-3xl tracking-[0.5em] font-mono text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all uppercase placeholder:text-gray-700"
-                      placeholder="------"
+                      placeholder="--------"
                     />
                   </div>
                   <button 
-                    disabled={isLoading || code.length !== 6}
+                    disabled={isLoading || code.length !== 8}
                     type="submit" 
                     className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3.5 rounded-xl transition-all flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(79,70,229,0.3)] border border-indigo-400/30 text-lg outline-none focus-visible:ring-4 focus-visible:ring-indigo-300"
                   >
