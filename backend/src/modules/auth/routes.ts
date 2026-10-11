@@ -1,11 +1,10 @@
-
 import type { FastifyInstance } from "fastify";
 import argon2 from "argon2";
 import { and, eq, isNull } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "../../db/client.js";
 import { redis } from "../../db/redis.js";
-import { blockedEmails, sessions, users } from "../../db/schema.js";
+import {blockedEmails, emailOutbox, sessions, users} from "../../db/schema.js";
 import { env } from "../../config/env.js";
 import {
   durationToMs,
@@ -19,7 +18,11 @@ import {
   safeHashCompare
 } from "../../lib/crypto.js";
 import { checkRateLimit } from "../../lib/rate-limit.js";
-import { sendOtpEmail } from "../email/service.js";
+import {
+  sendOtpEmail,
+  getAccountLockedEmailContent,
+  processEmailOutbox
+} from "../email/service.js";
 
 type SignupBody = {
   email?: string;
@@ -193,28 +196,85 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         message: "An account already exists for this email."
       });
     }
-
-    const passwordHash = await argon2.hash(password, {
-      type: argon2.argon2id
-    });
     const passwordFingerprint = generatePasswordFingerprint(password);
 
-    let created;
-    try {
-      const [inserted] = await db
-        .insert(users)
-        .values({ email, username, passwordHash, passwordFingerprint })
-        .returning({ id: users.id });
-      created = inserted;
-    } catch (error: any) {
-      if ((error.code === '23505' || error.cause?.code === '23505') && (error.constraint === 'users_password_fingerprint_unique' || error.cause?.constraint_name === 'users_password_fingerprint_unique')) {
-        return reply.code(400).send({
-          message: "This password has already been used. Please choose a different password."
-        });
-      }
-      throw error;
+    // Fast check gives the user a clear error.
+    const [fingerprintMatch] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.passwordFingerprint, passwordFingerprint))
+    .limit(1);
+
+    if (fingerprintMatch) {
+    return reply.code(409).send({
+        message:
+        "This password has already been used. Please choose a different password."
+    });
     }
 
+    const passwordHash = await argon2.hash(password, {
+    type: argon2.argon2id
+    });
+
+    let created: { id: string };
+
+    try {
+    const [inserted] = await db
+        .insert(users)
+        .values({
+        email,
+        username,
+        passwordHash,
+        passwordFingerprint
+        })
+        .returning({ id: users.id });
+
+    created = inserted;
+    } catch (error: unknown) {
+    const dbError = error as {
+        code?: string;
+        constraint?: string;
+        cause?: {
+        code?: string;
+        constraint?: string;
+        constraint_name?: string;
+        };
+    };
+
+    const code = dbError.code ?? dbError.cause?.code;
+
+    if (code === "23505") {
+        // Check the fingerprint after a uniqueness conflict too,
+        // covering simultaneous signup requests.
+        const [duplicateFingerprint] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.passwordFingerprint, passwordFingerprint))
+        .limit(1);
+
+        if (duplicateFingerprint) {
+        return reply.code(409).send({
+            message:
+            "This password has already been used. Please choose a different password."
+        });
+        }
+
+        // A different unique constraint failed, such as the email constraint.
+        const [duplicateEmail] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+
+        if (duplicateEmail) {
+        return reply.code(409).send({
+            message: "An account already exists for this email."
+        });
+        }
+    }
+
+    throw error;
+    }
     try {
       await storeAndSendOtp(email);
     } catch (error) {
@@ -396,35 +456,60 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     }
 
     if (!user || !passwordValid) {
-      const count = await redis.incr(failureKey);
-      if (count === 1) await redis.expire(failureKey, 900);
+    const count = await redis.incr(failureKey);
 
-      return reply.code(count >= 5 ? 429 : 401).send({
-        message: count >= 5
-          ? "Too many failed login attempts. Try again later."
-          : "Invalid email or password."
-      });
+    if (count === 1) {
+        await redis.expire(failureKey, 900);
     }
 
-    if (!user.emailVerifiedAt) {
-      return reply.code(403).send({
-        message: "Please verify your email before signing in."
-      });
+    // Queue one notification when the account first reaches five
+    // failed attempts. Do not send another on every locked request.
+    if (count === 5 && user) {
+        try {
+        const emailContent = getAccountLockedEmailContent();
+
+        await db.insert(emailOutbox).values({
+            toEmail: user.email,
+            subject: emailContent.subject,
+            body: emailContent.body
+        });
+
+        await processEmailOutbox();
+        } catch (error) {
+        request.log.error(
+            { err: error },
+            "Failed to queue or process account-lock notification"
+        );
+        }
     }
 
-    await redis.del(failureKey);
-    await issueSession(app, reply, { id: user.id, role: user.role });
-
-    return reply.send({
-      message: "Login successful.",
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role
-      }
+    return reply.code(count >= 5 ? 429 : 401).send({
+        message:
+        count >= 5
+            ? "Too many failed login attempts. Try again later."
+            : "Invalid email or password."
     });
-  });
+    }
+
+        if (!user.emailVerifiedAt) {
+        return reply.code(403).send({
+            message: "Please verify your email before signing in."
+        });
+        }
+
+        await redis.del(failureKey);
+        await issueSession(app, reply, { id: user.id, role: user.role });
+
+        return reply.send({
+        message: "Login successful.",
+        user: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role: user.role
+        }
+        });
+    });
 
   app.post("/refresh", async (request, reply) => {
     const oldToken = request.cookies[refreshCookie];

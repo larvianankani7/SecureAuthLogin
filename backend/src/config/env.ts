@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 
 dotenv.config({
-  path: process.env.ENV_FILE ?? "../.env"
+  path: process.env.ENV_FILE ?? ".env"
 });
 
 function required(name: string): string {

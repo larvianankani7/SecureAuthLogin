@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { motion } from 'framer-motion';
 import { Shield, Key, Lock, Code, Database, Crosshair, Search, Clock, Route, User, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -70,6 +71,35 @@ const CONCEPTS = [
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProfile() {
+      try {
+        const response = await fetch("/api/users/me", {
+          credentials: "include"
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (!cancelled && data.user?.createdAt) {
+          setCreatedAt(data.user.createdAt);
+        }
+      } catch (error) {
+        console.error("Failed to load account creation date:", error);
+      }
+    }
+
+    void loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="space-y-12 py-8 max-w-6xl mx-auto w-full">
@@ -113,7 +143,13 @@ export default function Dashboard() {
             <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Member Since</span>
             <span className="text-gray-200 text-sm block flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gray-500" />
-              {user?.createdAt || '—'}
+              {createdAt
+                ? new Date(createdAt).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                  })
+                : "Loading..."}
             </span>
           </div>
         </div>
