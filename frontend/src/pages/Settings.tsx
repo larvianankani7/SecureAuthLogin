@@ -232,17 +232,17 @@ export default function Settings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">User ID (Immutable)</label>
-              <div className="flex items-center gap-3 bg-black/30 border border-white/5 p-3.5 rounded-xl text-gray-300">
+              <div className="flex items-start gap-3 bg-black/30 border border-white/5 p-3.5 rounded-xl text-gray-300 min-w-0">
                 <Hash className="w-5 h-5 text-gray-500" />
-                <span className="font-mono text-sm">{user.id}</span>
+                <span className="font-mono text-sm break-all min-w-0">{user.id}</span>
               </div>
             </div>
 
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">Email Address (Immutable)</label>
-              <div className="flex items-center gap-3 bg-black/30 border border-white/5 p-3.5 rounded-xl text-gray-300">
+              <div className="flex items-start gap-3 bg-black/30 border border-white/5 p-3.5 rounded-xl text-gray-300 min-w-0">
                 <Mail className="w-5 h-5 text-gray-500" />
-                <span className="text-sm truncate">{user.email}</span>
+                <span className="text-sm truncate min-w-0">{user.email}</span>
               </div>
             </div>
 
@@ -256,7 +256,7 @@ export default function Settings() {
 
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">Account Created At</label>
-              <div className="flex items-center gap-3 bg-black/30 border border-white/5 p-3.5 rounded-xl text-gray-300">
+              <div className="flex items-start gap-3 bg-black/30 border border-white/5 p-3.5 rounded-xl text-gray-300 min-w-0">
                 <Calendar className="w-5 h-5 text-gray-500" />
                 <span className="text-sm">{displayCreatedAt}</span>
               </div>
@@ -279,7 +279,7 @@ export default function Settings() {
             </div>
             
             <div className="border border-[var(--color-border)] rounded-2xl overflow-x-auto bg-black/20">
-              <table className="w-full text-left text-sm whitespace-nowrap">
+              <table className="w-full min-w-[720px] text-left text-sm whitespace-nowrap">
                 <thead className="bg-black/40 text-gray-400 border-b border-[var(--color-border)]">
                   <tr>
                     <th className="px-6 py-5 font-semibold tracking-wider">User ID</th>
