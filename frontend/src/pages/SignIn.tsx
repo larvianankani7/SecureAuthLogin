@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, ShieldAlert, CheckCircle, ArrowLeft, Loader2, User, AlertCircle, RefreshCw } from 'lucide-react';
+import { Mail, Lock, ShieldAlert, CheckCircle, ArrowLeft, Loader2, User, AlertCircle, RefreshCw, EyeOff, Eye } from 'lucide-react';
 import { API_BASE_URL } from '../lib/api';
 
 export default function SignIn() {
@@ -9,6 +9,7 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState('');
   const [code, setCode] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -156,7 +157,10 @@ export default function SignIn() {
                     <label className="block text-sm font-semibold text-gray-300 mb-2">Create Password</label>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                      <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} maxLength={128} className="w-full min-w-0 bg-black/40 border border-[var(--color-border)] rounded-xl py-3 pl-12 pr-4 text-white text-base sm:text-lg" placeholder="Min 8 characters" />
+                      <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required minLength={8} maxLength={128} className="w-full min-w-0 bg-black/40 border border-[var(--color-border)] rounded-xl py-3 pl-12 pr-4 text-white text-base sm:text-lg" placeholder="Min 8 characters" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                        {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                      </button>
                     </div>
                   </div>
 

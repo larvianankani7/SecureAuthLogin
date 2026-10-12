@@ -1,36 +1,52 @@
-import { eq } from "drizzle-orm";
-import { Resend } from "resend";
+
+import nodemailer from "nodemailer";
+import { and, eq } from "drizzle-orm";
 import { supabase } from "../../lib/supabase.js";
 import { env } from "../../config/env.js";
 import { db } from "../../db/client.js";
 import { emailOutbox } from "../../db/schema.js";
 
-const resend = new Resend(env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: env.SMTP_HOST,
+  port: 587,
+  secure: false,
+  requireTLS: true,
+  auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+  tls: { minVersion: "TLSv1.2" },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 20000
+});
 
 export async function sendOtpEmail(email: string): Promise<void> {
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: {
-      shouldCreateUser: true
-    }
+    options: { shouldCreateUser: true }
   });
+  if (error) throw new Error(`Supabase OTP request failed: ${error.message}`);
+}
 
-  if (error) {
-    throw new Error(`OTP email request failed: ${error.message}`);
-  }
+export function getAccountRevokedEmailContent() {
+  return {
+    subject: "SecureAuthLogin — Account Access Revoked",
+    body: [
+      "SECUREAUTHLOGIN SECURITY NOTICE",
+      "",
+      "Your account access has been revoked by an administrator.",
+      "",
+      "Reason: Suspicious activity was detected.",
+      "",
+      "Your active sessions have been invalidated. You can no longer sign in to this account, and this email address cannot be used to register another account.",
+      "",
+      "If you believe this decision was made in error, contact the project administrator through an independently verified support channel.",
+      "",
+      "SecureAuthLogin Security Team"
+    ].join("\n")
+  };
 }
 
 export function getAccountDeletedEmailContent() {
-  return {
-    subject: "Account Deleted",
-    body: [
-      "Account Deleted",
-      "Your SecureAuthLogin account has been deleted by an administrator.",
-      "Your account access and active sessions have been revoked.",
-      "Your email address is blocked from registering another account.",
-      "If you believe this action was taken in error, contact the project administrator."
-    ].join("\n")
-  };
+  return getAccountRevokedEmailContent();
 }
 
 export function getAccountLockedEmailContent() {
@@ -38,75 +54,46 @@ export function getAccountLockedEmailContent() {
     subject: "SecureAuthLogin account temporarily locked",
     body: [
       "Account Temporarily Locked",
-      "We detected five failed login attempts for your SecureAuthLogin account.",
+      "Five failed login attempts were detected.",
       "Login attempts are temporarily blocked for 15 minutes.",
-      "If you did not attempt these logins, consider changing your password after access is restored.",
-      "If you continue to have trouble signing in, contact the project administrator."
+      "If you did not attempt these logins, contact the project administrator."
     ].join("\n")
   };
 }
 
-const sleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
+export async function processEmailOutbox(outboxId?: string): Promise<void> {
+  if (!outboxId) return;
 
-export async function processEmailOutbox(): Promise<void> {
-  const pending = await db
-    .select()
-    .from(emailOutbox)
-    .where(eq(emailOutbox.status, "pending"))
-    .limit(10);
+  const claimed = await db.update(emailOutbox)
+    .set({ status: "sending" })
+    .where(and(eq(emailOutbox.id, outboxId), eq(emailOutbox.status, "pending")))
+    .returning();
 
-  for (const email of pending) {
-    let sent = false;
+  const email = claimed[0];
+  if (!email) return;
 
-    for (let attempt = 0; attempt < 5; attempt++) {
-      try {
-        const { error } = await resend.emails.send({
-          from: env.RESEND_FROM,
-          to: email.toEmail,
-          subject: email.subject,
-          text: email.body
-        });
+  try {
+    await transporter.sendMail({
+      from: env.SMTP_FROM,
+      to: email.toEmail,
+      subject: email.subject,
+      text: email.body
+    });
 
-        if (error) {
-          throw new Error(`Resend email failed: ${error.message}`);
-        }
+    await db.update(emailOutbox)
+      .set({ status: "sent", attempts: email.attempts + 1 })
+      .where(eq(emailOutbox.id, email.id));
+  } catch (error) {
+    await db.update(emailOutbox)
+      .set({ status: "failed", attempts: email.attempts + 1 })
+      .where(eq(emailOutbox.id, email.id));
 
-        await db
-          .update(emailOutbox)
-          .set({
-            status: "sent",
-            attempts: email.attempts + attempt + 1
-          })
-          .where(eq(emailOutbox.id, email.id));
+    console.error(JSON.stringify({
+      event: "revocation_email_delivery_failed",
+      outboxId: email.id,
+      error: error instanceof Error ? error.message : "Unknown SMTP error"
+    }));
 
-        sent = true;
-        break;
-      } catch (error) {
-        const attempts = email.attempts + attempt + 1;
-        const finalAttempt = attempt === 4;
-
-        await db
-          .update(emailOutbox)
-          .set({
-            attempts,
-            status: finalAttempt ? "failed" : "pending"
-          })
-          .where(eq(emailOutbox.id, email.id));
-
-        if (finalAttempt) {
-          console.error(
-            `Email delivery failed after ${attempts} attempts for outbox item ${email.id}.`,
-            error
-          );
-        } else {
-          await sleep(500 * (attempt + 1));
-        }
-      }
-    }
-
-    if (!sent) {
-      continue;
-    }
+    throw new Error("SMTP delivery failed");
   }
 }
