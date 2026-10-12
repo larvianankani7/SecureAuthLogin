@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col items-center justify-center space-y-20 sm:space-y-32 py-8 sm:py-12 pb-16 sm:pb-24 w-full min-w-0">
       <div className="text-center space-y-6 sm:space-y-8 w-full max-w-4xl px-2 sm:px-4">
-        <motion.h1 variants={itemVariants} className="text-4xl xs:text-5xl sm:text-6xl md:text-8xl font-extrabold tracking-tight cursor-default relative inline-block max-w-full break-words">
+        <motion.h1 variants={itemVariants} className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight cursor-default relative inline-block max-w-full break-words">
           <motion.div whileHover={{ y: [-2, 2, -2], filter: ['hue-rotate(0deg)', 'hue-rotate(15deg)', 'hue-rotate(0deg)'], transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' } }} className="bg-gradient-to-r from-indigo-300 via-purple-200 to-indigo-400 bg-clip-text text-transparent drop-shadow-2xl break-words">
             SECUREAUTHLOGIN
           </motion.div>
