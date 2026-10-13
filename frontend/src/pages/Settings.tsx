@@ -38,6 +38,7 @@ export default function Settings() {
 
   // Fetch actual profile data
   useEffect(() => {
+    if (!user) return;
     const fetchProfile = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/users/me`, { credentials: "include" });
@@ -50,7 +51,7 @@ export default function Settings() {
       }
     };
     fetchProfile();
-  }, []);
+  }, [user]);
 
   // Fetch admin users if user is admin
   useEffect(() => {
@@ -71,7 +72,7 @@ export default function Settings() {
       };
       fetchUsers();
     }
-  }, [user]);
+  }, []);
 
   const handleLogout = async () => {
     await logout();

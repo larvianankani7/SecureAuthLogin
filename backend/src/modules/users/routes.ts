@@ -1,4 +1,3 @@
-
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
@@ -14,7 +13,7 @@ export async function usersRoutes(app: FastifyInstance): Promise<void> {
 
       const [user] = await db
         .select({
-          id: users.id,
+          publicId: users.publicId,
           email: users.email,
           username: users.username,
           role: users.role,
@@ -26,10 +25,21 @@ export async function usersRoutes(app: FastifyInstance): Promise<void> {
         .limit(1);
 
       if (!user) {
-        return reply.code(404).send({ message: "Account not found." });
+        return reply.code(404).send({
+          message: "Account not found."
+        });
       }
 
-      return reply.send({ user });
+      return reply.send({
+        user: {
+          id: user.publicId,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+          createdAt: user.createdAt,
+          emailVerifiedAt: user.emailVerifiedAt
+        }
+      });
     }
   );
 
@@ -50,7 +60,7 @@ export async function usersRoutes(app: FastifyInstance): Promise<void> {
         .set({ username })
         .where(eq(users.id, request.authUser!.id))
         .returning({
-          id: users.id,
+          publicId: users.publicId,
           email: users.email,
           username: users.username,
           role: users.role,
@@ -58,10 +68,21 @@ export async function usersRoutes(app: FastifyInstance): Promise<void> {
         });
 
       if (!user) {
-        return reply.code(404).send({ message: "Account not found." });
+        return reply.code(404).send({
+          message: "Account not found."
+        });
       }
 
-      return reply.send({ message: "Settings updated.", user });
+      return reply.send({
+        message: "Settings updated.",
+        user: {
+          id: user.publicId,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+          createdAt: user.createdAt
+        }
+      });
     }
   );
 }

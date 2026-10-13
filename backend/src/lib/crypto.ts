@@ -1,4 +1,3 @@
-
 import {
   createHash,
   createHmac,
@@ -10,6 +9,10 @@ import { env } from "../config/env.js";
 
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+export function generatePublicId(): string {
+  return randomBytes(32).toString("base64url");
 }
 
 export function hashRefreshToken(token: string): string {
@@ -45,9 +48,13 @@ export function safeHashCompare(left: string, right: string): boolean {
 
 export function durationToMs(value: string): number {
   const match = /^(\d+)(s|m|h|d)$/.exec(value);
-  if (!match) throw new Error(`Invalid duration: ${value}`);
+
+  if (!match) {
+    throw new Error(`Invalid duration: ${value}`);
+  }
 
   const amount = Number(match[1]);
+
   const units: Record<string, number> = {
     s: 1_000,
     m: 60_000,

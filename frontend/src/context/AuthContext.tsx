@@ -1,4 +1,9 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect
+} from 'react';
 import type { ReactNode } from 'react';
 import { API_BASE_URL } from '../lib/api';
 
@@ -17,72 +22,134 @@ type AuthContextType = {
   isLoading: boolean;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext =
+  createContext<AuthContextType | undefined>(
+    undefined
+  );
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthProvider({
+  children
+}: {
+  children: ReactNode;
+}) {
+  const [user, setUser] =
+    useState<User | null>(null);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
 
   useEffect(() => {
-    const initAuth = async () => {
-      setIsLoading(true);
+    let cancelled = false;
+
+    async function initAuth() {
       try {
-        // First try to fetch the profile
-        let res = await fetch(`${API_BASE_URL}/api/users/me`, { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-        } else if (res.status === 401) {
-          // If access token is expired, try to refresh
-          const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh`, { 
-            method: 'POST', 
-            credentials: 'include'
-          });
-          if (refreshRes.ok) {
-            const refreshData = await refreshRes.json();
-            setUser(refreshData.user);
-          } else {
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/users/me`,
+            {
+              credentials: 'include'
+            }
+          );
+
+        if (response.ok) {
+          const data =
+            await response.json();
+
+          if (!cancelled) {
+            setUser(data.user ?? null);
+          }
+
+          return;
+        }
+
+        if (response.status !== 401) {
+          if (!cancelled) {
             setUser(null);
           }
-        } else {
+
+          return;
+        }
+
+        const refreshResponse =
+          await fetch(
+            `${API_BASE_URL}/api/auth/refresh`,
+            {
+              method: 'POST',
+              credentials: 'include'
+            }
+          );
+
+        if (!refreshResponse.ok) {
+          if (!cancelled) {
+            setUser(null);
+          }
+
+          return;
+        }
+
+        const refreshData =
+          await refreshResponse.json();
+
+        if (!cancelled) {
+          setUser(
+            refreshData.user ?? null
+          );
+        }
+      } catch {
+        if (!cancelled) {
           setUser(null);
         }
-      } catch (err) {
-        console.error('Auth init error:', err);
-        setUser(null);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
+    }
+
+    void initAuth();
+
+    return () => {
+      cancelled = true;
     };
-    
-    initAuth();
   }, []);
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, { 
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
-      });
-    } catch (err) {
-      console.error('Logout error:', err);
+      await fetch(
+        `${API_BASE_URL}/api/auth/logout`,
+        {
+          method: 'POST',
+          credentials: 'include'
+        }
+      );
     } finally {
       setUser(null);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        logout,
+        isLoading
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  const context =
+    useContext(AuthContext);
+
+  if (!context) {
+    throw new Error(
+      'useAuth must be used within AuthProvider'
+    );
   }
+
   return context;
 }

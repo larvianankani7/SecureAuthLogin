@@ -15,6 +15,7 @@ export const users = pgTable(
   "users",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    publicId: varchar("public_id", { length: 43 }).notNull().unique(),
     email: varchar("email", { length: 254 }).notNull().unique(),
     username: varchar("username", { length: 32 }).notNull(),
     passwordHash: text("password_hash").notNull(),
@@ -27,7 +28,10 @@ export const users = pgTable(
       .notNull()
       .defaultNow()
   },
-  (table) => [index("users_created_at_idx").on(table.createdAt)]
+  (table) => [
+    index("users_created_at_idx").on(table.createdAt),
+    index("users_public_id_idx").on(table.publicId)
+  ]
 );
 
 export const sessions = pgTable(
@@ -55,8 +59,7 @@ export const sessions = pgTable(
 export const blockedEmails = pgTable("blocked_emails", {
   email: varchar("email", { length: 254 }).primaryKey(),
   reason: varchar("reason", { length: 64 }).notNull(),
-  blockedAt: timestamp("blocked_at", { withTimezone: true })
-    .defaultNow()
+  blockedAt: timestamp("blocked_at", { withTimezone: true }).defaultNow()
 });
 
 export const emailOutbox = pgTable("email_outbox", {
@@ -66,5 +69,7 @@ export const emailOutbox = pgTable("email_outbox", {
   body: text("body").notNull(),
   status: varchar("status", { length: 32 }).notNull().default("pending"),
   attempts: integer("attempts").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  createdAt: timestamp("created_at", {
+    withTimezone: true
+  }).notNull().defaultNow()
 });

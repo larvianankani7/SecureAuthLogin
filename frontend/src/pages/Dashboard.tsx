@@ -74,6 +74,8 @@ export default function Dashboard() {
   const [createdAt, setCreatedAt] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) return;
+
     let cancelled = false;
 
     async function loadProfile() {
@@ -83,23 +85,17 @@ export default function Dashboard() {
         });
 
         if (!response.ok) return;
-
         const data = await response.json();
 
-        if (!cancelled && data.user?.createdAt) {
-          setCreatedAt(data.user.createdAt);
-        }
+        if (!cancelled && data.user?.createdAt) setCreatedAt(data.user.createdAt);
       } catch (error) {
-        console.error("Failed to load account creation date:", error);
+        console.error("[dashboard:profile] Failed to load profile", error);
       }
     }
 
     void loadProfile();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    return () => { cancelled = true; };
+  }, [user]);
 
   return (
     <div className="space-y-12 py-8 max-w-6xl mx-auto w-full">
