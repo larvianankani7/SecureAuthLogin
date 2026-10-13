@@ -4,7 +4,7 @@ import { db } from '../db/client.js';
 import { users, emailOutbox } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { env } from '../config/env.js';
-import { generatePasswordFingerprint } from '../lib/crypto.js';
+import {generatePasswordFingerprint, generatePublicId} from '../lib/crypto.js';
 
 // Setup: wait for DB to connect, etc.
 
@@ -17,6 +17,7 @@ test('Fingerprint: Should prevent cross-account password reuse', async (t) => {
 
   // Insert first user
   await db.insert(users).values({
+    publicId: generatePublicId(),
     email: "user1@test.com",
     username: "user1",
     passwordHash: "dummyhash1",
@@ -27,6 +28,7 @@ test('Fingerprint: Should prevent cross-account password reuse', async (t) => {
   let error;
   try {
     await db.insert(users).values({
+      publicId: generatePublicId(),
       email: "user2@test.com",
       username: "user2",
       passwordHash: "dummyhash2",
