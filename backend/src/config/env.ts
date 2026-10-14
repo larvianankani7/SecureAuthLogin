@@ -35,11 +35,8 @@ export const env = {
   OTP_MAX_ATTEMPTS: positiveInteger("OTP_MAX_ATTEMPTS", 5),
   SUPABASE_URL: required("SUPABASE_URL"),
   SUPABASE_PUBLISHABLE_KEY: required("SUPABASE_PUBLISHABLE_KEY"),
-  SMTP_HOST: required("SMTP_HOST"),
-  SMTP_PORT: positiveInteger("SMTP_PORT", 587),
-  SMTP_USER: required("SMTP_USER"),
-  SMTP_PASS: required("SMTP_PASS"),
-  SMTP_FROM: required("SMTP_FROM"),
+  EMAIL_RELAY_URL: required("EMAIL_RELAY_URL").replace(/\/+$/, ""),
+  EMAIL_RELAY_API_KEY: required("EMAIL_RELAY_API_KEY"),
   ADMIN_EMAIL: required("ADMIN_EMAIL").toLowerCase(),
   ADMIN_PASSWORD: required("ADMIN_PASSWORD"),
   PASSWORD_FINGERPRINT_SECRET: required("PASSWORD_FINGERPRINT_SECRET")
@@ -56,8 +53,13 @@ if (env.ADMIN_PASSWORD.length < 8) throw new Error("ADMIN_PASSWORD must contain 
 if (!/^postgres(ql)?:\/\//i.test(env.DATABASE_URL) || !/^rediss?:\/\//i.test(env.REDIS_URL)) {
   throw new Error("Invalid database or Redis URL");
 }
+if (!/^https:\/\//i.test(env.EMAIL_RELAY_URL)) {
+  throw new Error("EMAIL_RELAY_URL must use HTTPS");
+}
 
-if (env.SMTP_PORT !== 587) throw new Error("SMTP_PORT must be 587");
+if (env.EMAIL_RELAY_API_KEY.length < 32) {
+  throw new Error("EMAIL_RELAY_API_KEY must contain at least 32 characters");
+}
 if (!/^https?:\/\//i.test(env.FRONTEND_URL)) throw new Error("FRONTEND_URL must be an HTTP(S) origin");
 if (!/^https:\/\//i.test(env.SUPABASE_URL)) throw new Error("SUPABASE_URL must use HTTPS");
 if (env.NODE_ENV === "production" && !env.FRONTEND_URL.startsWith("https://")) {

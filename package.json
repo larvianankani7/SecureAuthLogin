@@ -1,0 +1,21 @@
+{
+  "name": "secureauthlogin",
+  "version": "1.0.0",
+  "description": "**SecureAuthProject** *A robust, minimalistic authentication application.*",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/larvianankani7/SecureAuthLogin.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/larvianankani7/SecureAuthLogin/issues"
+  },
+  "homepage": "https://github.com/larvianankani7/SecureAuthLogin#readme"
+}
