@@ -74,7 +74,7 @@ export async function processEmailOutbox(outboxId?: string): Promise<void> {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${env.EMAIL_RELAY_API_KEY}`,
+          Authorization: `Bearer ${env.EMAIL_RELAY_API_KEY.trim()}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({

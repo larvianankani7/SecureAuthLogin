@@ -1,4 +1,3 @@
-
 import "dotenv/config";
 import Fastify from "fastify";
 import nodemailer from "nodemailer";
@@ -19,7 +18,7 @@ for (const name of required) {
   }
 }
 
-const apiKey = process.env.EMAIL_RELAY_API_KEY;
+const apiKey = process.env.EMAIL_RELAY_API_KEY.trim();
 const app = Fastify({ logger: true, bodyLimit: 8192 });
 
 await app.register(rateLimit, {
