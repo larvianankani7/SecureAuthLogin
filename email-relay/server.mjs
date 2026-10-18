@@ -22,7 +22,7 @@ const apiKey = process.env.EMAIL_RELAY_API_KEY.trim();
 const app = Fastify({ logger: true, bodyLimit: 8192 });
 
 await app.register(rateLimit, {
-  max: 1,
+  max: 10,
   timeWindow: "1 minute"
 });
 
