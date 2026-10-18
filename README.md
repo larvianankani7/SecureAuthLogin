@@ -1,7 +1,7 @@
-# SecureAuthProject
+# SecureAuth
 
 ## Core Concept
-**SecureAuthProject**
+**SecureAuth**
 *A robust, minimalistic authentication application.*
 
 This project implements a secure, defense-in-depth authentication structure featuring Role-Based Access Control (RBAC), OTP verification, robust rate limiting, and session security. It is built to minimize the attack surface and resist common vulnerabilities.

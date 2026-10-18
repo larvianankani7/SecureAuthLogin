@@ -1,5 +1,5 @@
 {
-  "name": "secureauthlogin",
+  "name": "secureauth",
   "version": "1.0.0",
   "description": "**SecureAuthProject** *A robust, minimalistic authentication application.*",
   "main": "index.js",
